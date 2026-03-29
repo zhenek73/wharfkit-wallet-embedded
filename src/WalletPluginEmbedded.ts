@@ -1,4 +1,4 @@
-import {PermissionLevel, PrivateKey} from '@wharfkit/antelope'
+import {Checksum256, Name, PermissionLevel, PrivateKey} from '@wharfkit/antelope'
 import {Logo} from '@wharfkit/common'
 import {
     AbstractWalletPlugin,
@@ -15,14 +15,38 @@ import {decryptPrivateKey, encryptPrivateKey} from './crypto'
 import {hasEmbeddedWallet, loadEncryptedKey, saveEncryptedKey} from './storage'
 import {showCreateModal, showUnlockModal} from './ui'
 
-const HARDCODED_ACTOR = 'testaccount'
+const RPC_ENDPOINTS = [
+    'https://eos.greymass.com',
+    'https://api.eosn.io',
+    'https://eos.api.eosnation.io',
+]
+
+async function getAccountByKey(publicKey: string): Promise<string> {
+    for (const endpoint of RPC_ENDPOINTS) {
+        try {
+            const response = await fetch(`${endpoint}/v1/history/get_key_accounts`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({public_key: publicKey}),
+                signal: AbortSignal.timeout(5000),
+            })
+            const data = (await response.json()) as {account_names?: string[]}
+            if (data.account_names?.length) {
+                return data.account_names[0]
+            }
+        } catch {
+            continue
+        }
+    }
+    throw new Error('No EOS account found for this private key')
+}
 
 export class WalletPluginEmbedded extends AbstractWalletPlugin {
     readonly id = 'embedded'
 
     name = 'Embedded Wallet'
 
-    private sessionPrivateKey?: PrivateKey
+    private privateKey: PrivateKey | null = null
 
     constructor() {
         super()
@@ -54,17 +78,18 @@ export class WalletPluginEmbedded extends AbstractWalletPlugin {
         }
 
         const pk = PrivateKey.from(privateKeyWif)
-        this.sessionPrivateKey = pk
+        this.privateKey = pk
 
-        const publicKey = pk.toPublic().toLegacyString()
+        const publicKey = pk.toPublic().toString()
         this.metadata.publicKey = publicKey
+
+        const actorName = await getAccountByKey(publicKey)
+        const actor = Name.from(actorName)
 
         const chainDef = context.chain ?? context.chains[0]
         if (!chainDef) {
             throw new Error('No chain available for login')
         }
-
-        const actor = HARDCODED_ACTOR
 
         return {
             chain: chainDef.id,
@@ -76,19 +101,21 @@ export class WalletPluginEmbedded extends AbstractWalletPlugin {
     }
 
     async sign(
-        transaction: ResolvedSigningRequest,
-        _context: TransactContext
+        resolved: ResolvedSigningRequest,
+        context: TransactContext
     ): Promise<WalletPluginSignResponse> {
-        if (!this.sessionPrivateKey) {
-            throw new Error('Wallet not unlocked')
+        if (!this.privateKey) {
+            throw new Error('No private key available. Please login first.')
         }
-        const signature = this.sessionPrivateKey.signDigest(transaction.signingDigest)
+        const digest = resolved.transaction.signingDigest(Checksum256.from(context.chain.id))
+        const signature = this.privateKey.signDigest(digest)
         return {
             signatures: [signature],
+            resolved,
         }
     }
 
     async logout(_context: LogoutContext): Promise<void> {
-        this.sessionPrivateKey = undefined
+        this.privateKey = null
     }
 }

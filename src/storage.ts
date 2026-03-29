@@ -1,0 +1,18 @@
+const STORAGE_KEY = 'wharfkit.embedded.encryptedKey'
+
+export function saveEncryptedKey(encrypted: string): void {
+    localStorage.setItem(STORAGE_KEY, encrypted)
+}
+
+export function loadEncryptedKey(): string | null {
+    return localStorage.getItem(STORAGE_KEY)
+}
+
+export function hasWallet(): boolean {
+    const v = localStorage.getItem(STORAGE_KEY)
+    return v != null && v.length > 0
+}
+
+export function clearWallet(): void {
+    localStorage.removeItem(STORAGE_KEY)
+}

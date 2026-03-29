@@ -8,11 +8,11 @@ export function loadEncryptedKey(): string | null {
     return localStorage.getItem(STORAGE_KEY)
 }
 
-export function hasWallet(): boolean {
+export function hasEmbeddedWallet(): boolean {
     const v = localStorage.getItem(STORAGE_KEY)
     return v != null && v.length > 0
 }
 
-export function clearWallet(): void {
+export function clearEmbeddedWallet(): void {
     localStorage.removeItem(STORAGE_KEY)
 }

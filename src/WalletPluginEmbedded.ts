@@ -1,16 +1,18 @@
 import {PermissionLevel, PrivateKey} from '@wharfkit/antelope'
+import {Logo} from '@wharfkit/common'
 import {
     AbstractWalletPlugin,
     LoginContext,
     LogoutContext,
     TransactContext,
     WalletPluginLoginResponse,
+    WalletPluginMetadata,
     WalletPluginSignResponse,
 } from '@wharfkit/session'
 import type {ResolvedSigningRequest} from '@wharfkit/signing-request'
 
 import {decryptPrivateKey, encryptPrivateKey} from './crypto'
-import {hasWallet, loadEncryptedKey, saveEncryptedKey} from './storage'
+import {hasEmbeddedWallet, loadEncryptedKey, saveEncryptedKey} from './storage'
 import {showCreateModal, showUnlockModal} from './ui'
 
 const HARDCODED_ACTOR = 'testaccount'
@@ -22,10 +24,22 @@ export class WalletPluginEmbedded extends AbstractWalletPlugin {
 
     private sessionPrivateKey?: PrivateKey
 
+    constructor() {
+        super()
+        this.metadata = new WalletPluginMetadata({
+            name: this.name,
+            logo: Logo.from(
+                typeof window !== 'undefined'
+                    ? `${window.location.origin}/icons/webdexlogo.png`
+                    : ''
+            ),
+        })
+    }
+
     async login(context: LoginContext): Promise<WalletPluginLoginResponse> {
         let privateKeyWif: string
 
-        if (hasWallet()) {
+        if (hasEmbeddedWallet()) {
             const password = await showUnlockModal()
             const encrypted = loadEncryptedKey()
             if (encrypted == null) {

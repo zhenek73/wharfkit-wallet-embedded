@@ -36,7 +36,7 @@ async function deriveAesKey(password: string, salt: Uint8Array): Promise<CryptoK
     return crypto.subtle.deriveKey(
         {
             name: 'PBKDF2',
-            salt,
+            salt: new Uint8Array(salt),
             iterations: PBKDF2_ITERATIONS,
             hash: 'SHA-256',
         },
@@ -71,6 +71,10 @@ export async function decryptPrivateKey(encrypted: string, password: string): Pr
     const iv = raw.subarray(SALT_BYTES, SALT_BYTES + IV_BYTES)
     const ciphertext = raw.subarray(SALT_BYTES + IV_BYTES)
     const key = await deriveAesKey(password, salt)
-    const plaintext = await crypto.subtle.decrypt({name: 'AES-GCM', iv}, key, ciphertext)
+    const plaintext = await crypto.subtle.decrypt(
+        {name: 'AES-GCM', iv: new Uint8Array(iv)},
+        key,
+        new Uint8Array(ciphertext)
+    )
     return new TextDecoder().decode(plaintext)
 }

@@ -1,16 +1,25 @@
 {
   "name": "wharfkit-wallet-embedded",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Embedded wallet plugin for WharfKit — stores encrypted private key in localStorage",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "assets"],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "dev": "tsc --watch"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["wharfkit", "eos", "wallet", "embedded"],
+  "author": "zhenek73",
+  "license": "MIT",
   "dependencies": {
     "@wharfkit/antelope": "^1.1.1",
+    "@wharfkit/session": "^1.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
     "@wharfkit/session": "^1.6.1"
   }
 }

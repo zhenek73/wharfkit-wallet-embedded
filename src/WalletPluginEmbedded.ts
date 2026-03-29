@@ -12,6 +12,7 @@ import {
 import type {ResolvedSigningRequest} from '@wharfkit/signing-request'
 
 import {decryptPrivateKey, encryptPrivateKey} from './crypto'
+import {WEBDEX_LOGO} from './logo'
 import {hasEmbeddedWallet, loadEncryptedKey, saveEncryptedKey} from './storage'
 import {showCreateModal, showUnlockModal} from './ui'
 
@@ -52,11 +53,7 @@ export class WalletPluginEmbedded extends AbstractWalletPlugin {
         super()
         this.metadata = new WalletPluginMetadata({
             name: this.name,
-            logo: Logo.from(
-                typeof window !== 'undefined'
-                    ? `${window.location.origin}/icons/webdexlogo.png`
-                    : ''
-            ),
+            logo: Logo.from(WEBDEX_LOGO),
         })
     }
 
